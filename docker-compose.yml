@@ -8,10 +8,14 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=database;Database=mydb;Username=postgres;Password=postgres
+      - KAFKA_BROKER=kafka:9092
+      - LOGSTASH_HOST=logstash:5044  # Logstash endpoint for logging
     ports:
       - "5001:5000"
     depends_on:
       - database
+      - kafka
+      - logstash
 
   database:
     image: postgres:14
@@ -34,7 +38,61 @@ services:
       - ./frontend:/app  # Adjust path to match Dockerfile
     environment:
       - CHOKIDAR_USEPOLLING=true  # Enable polling for hot-reloading in Docker
+      - API_URL=http://backend:5000
     depends_on:
       - backend
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m  # Adjust memory usage as needed
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.9
+    environment:
+      - LOGSTASH_JAVA_OPTS=-Xms256m -Xmx256m  # Adjust memory usage as needed
+    ports:
+      - "5044:5044"  # Logstash input for log data
+      - "9600:9600"  # Logstash monitoring API
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline  # Custom pipeline configuration
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.9
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"  # Kibana default port
+    depends_on:
+      - elasticsearch
+
 volumes:
   db-data:
+  es-data:
