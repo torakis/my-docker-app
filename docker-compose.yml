@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=database;Database=mydb;Username=postgres;Password=postgres
+    ports:
+      - "5001:5000"
+    depends_on:
+      - database
+
+  database:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/my-app:/app  # Adjust path to match Dockerfile
+    environment:
+      - CHOKIDAR_USEPOLLING=true  # Enable polling for hot-reloading in Docker
+    depends_on:
+      - backend
+volumes:
+  db-data:
