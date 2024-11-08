@@ -31,7 +31,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend/my-app:/app  # Adjust path to match Dockerfile
+      - ./frontend:/app  # Adjust path to match Dockerfile
     environment:
       - CHOKIDAR_USEPOLLING=true  # Enable polling for hot-reloading in Docker
     depends_on:

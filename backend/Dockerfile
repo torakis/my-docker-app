@@ -6,7 +6,7 @@ EXPOSE 5000
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY . .
-RUN dotnet restore "MyApi/MyApi/MyApi.csproj"
+RUN dotnet restore "MyApi/MyApi.csproj"
 WORKDIR "/src/MyApi"
 RUN dotnet build -c Release -o /app/build
 
