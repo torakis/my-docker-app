@@ -16,6 +16,7 @@ services:
       - database
       - kafka
       - logstash
+    restart: always
 
   database:
     image: postgres:14
@@ -27,6 +28,16 @@ services:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
+
+  pgadmin:
+      image: dpage/pgadmin4
+      environment:
+        PGADMIN_DEFAULT_EMAIL: admin@admin.com  # Set a pgAdmin email
+        PGADMIN_DEFAULT_PASSWORD: admin         # Set a pgAdmin password
+      ports:
+        - "8080:80"  # Exposes pgAdmin on localhost:8080
+      depends_on:
+        - database
 
   frontend:
     build:
